@@ -13,7 +13,7 @@ import time
 
 class TorcsEnv:
     terminal_judge_start = 100  # If after 100 timestep still no progress, terminated
-    termination_limit_progress = 5  # [km/h], episode terminates if car is running slower than this limit
+    termination_limit_progress = 0.5  # [km/h], episode terminates if car is running slower than this limit
     default_speed = 50
 
     initial_reset = True

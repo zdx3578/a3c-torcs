@@ -123,13 +123,13 @@ class Worker(object):
                     observation = env.reset(relaunch=True)
                 else:
                     observation = env.reset()
-                #state_t = obs_to_state(observation)
+                state_t = obs_to_state(observation)
 
-                ob = observation
-                print(ob)
+                #ob = observation
+                #print(ob)
 
-                s_t = np.hstack((0, ob.track, ob.trackPos, ob.speedX, ob.speedY,  ob.speedZ, ob.wheelSpinVel/100.0, ob.rpm))
-                state_t = s_t
+                #s_t = np.hstack((0, ob.track, ob.trackPos, ob.speedX, ob.speedY,  ob.speedZ, ob.wheelSpinVel/100.0, ob.rpm))
+                #state_t = s_t
 
 
                 done = False
