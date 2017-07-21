@@ -1,7 +1,13 @@
 # a3c-torcs
 
+# use 
 
-References
+anaconda python3.6
+tensorflow 1.2
+
+
+
+# References
 
 https://github.com/bn2302/rl_torcs
 
