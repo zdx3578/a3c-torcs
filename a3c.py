@@ -161,7 +161,7 @@ class Worker(object):
                     total_steps += 1
                     episode_step_count += 1
 
-                    if total_steps % 20:
+                    if (total_steps % 30) == 0:
                         print(
                             "Worker", self.name,
                             "Episode", episode_count, "Step",
@@ -179,7 +179,7 @@ class Worker(object):
 
                     # If the episode buffer is full, flush it and update
                     # the network weights
-                    if (len(episode_buffer) == 30 and not done
+                    if (len(episode_buffer) == 15 and not done
                             and episode_step_count != max_episode_length-1):
 
                         value_t1 = sess.run(
@@ -191,6 +191,8 @@ class Worker(object):
                                 episode_buffer, sess, gamma, value_t1)
                         episode_buffer = []
                         sess.run(self.update_local_ops)
+            
+            
                     if (done or episode_step_count >= max_episode_length):
                         break
 
