@@ -58,6 +58,7 @@ import sys
 import getopt
 import os
 import time
+import requests
 import subprocess
 PI= 3.14159265359
 
@@ -78,6 +79,15 @@ ophelp+= ' --version, -v        Show current version.'
 usage= 'Usage: %s [ophelp [optargs]] \n' % sys.argv[0]
 usage= usage + ophelp
 version= "20130505-2"
+
+
+def send_cmd(worker,port):
+
+    start_cmd={"worker":"worker"+str(worker),"port":port}
+    requests.post("http://127.0.0.1:5000/cmd_api", data=start_cmd)
+
+
+
 
 def clip(v,lo,hi):
     if v<lo: return lo
@@ -207,7 +217,8 @@ class Client():
                 print("Count Down : {}, fail : {} ".format(self.port,n_fail) )
                 if n_fail < 0:
                     print("relaunch torcs")
-                    self.start_torcs()
+                    # self.start_torcs()
+                    send_cmd(self.port,self.port)
                     # os.system('pkill torcs')
                     # time.sleep(1.0)
                     # if self.vision is False:
