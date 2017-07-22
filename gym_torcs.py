@@ -3,12 +3,15 @@ from gym import spaces
 import numpy as np
 # from os import path
 import snakeoil3_gym as snakeoil3
+from  snakeoil3_gym import  send_cmd
 import numpy as np
 import copy
 import collections as col
 import os
 import subprocess
 import time
+import requests
+
 
 
 class TorcsEnv:
@@ -30,6 +33,8 @@ class TorcsEnv:
         ##print("launch torcs")
         #os.system('pkill torcs')
         time.sleep(0.5)
+
+        send_cmd(self.port,self.port)
         # self.kill_torcs()
         # if self.vision is True:
         #     os.system('torcs  -nofuel -nodamage -nolaptime -vision -p {} &'.format(self.port))
@@ -37,7 +42,8 @@ class TorcsEnv:
 
         # else:
         #     os.system('torcs  -nofuel -nolaptime -p {} &'.format(self.port))
-        self.start_torcs()
+        # self.start_torcs()
+
 
         # time.sleep(0.5)
         # os.system('sh autostart.sh')
@@ -196,7 +202,7 @@ class TorcsEnv:
                client.R.d['meta'] = True
 
         if np.cos(obs['angle']) < 0: # Episode is terminated if the agent runs backward
-	    print("--- backward restart : reward: {},x:{},angle:{},trackPos:{}".format(progress,sp,obs['angle'],obs['trackPos']))
+            print("--- backward restart : reward: {},x:{},angle:{},trackPos:{}".format(progress,sp,obs['angle'],obs['trackPos']))
             episode_terminate = True
             client.R.d['meta'] = True
 
@@ -254,7 +260,9 @@ class TorcsEnv:
         # else:
         #     os.system('torcs -nofuel -nolaptime -p {} &'.format(self.port))
         # time.sleep(0.5)
-        self.start_torcs()
+        # self.start_torcs()
+        send_cmd(self.port,self.port)
+        
         time.sleep(0.5)
 
     # def agent_to_torcs(self, u):
