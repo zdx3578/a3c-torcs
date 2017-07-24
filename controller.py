@@ -96,6 +96,9 @@ def start_game(port,pid):
     print("***************************sleep start")
     time.sleep(4)
     print("***************************sleep end")
+    print(" "
+    print(" "
+    print(" ")
     return pid
 
 

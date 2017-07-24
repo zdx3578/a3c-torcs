@@ -198,15 +198,18 @@ class TorcsEnv:
         if self.terminal_judge_start < self.time_step: # Episode terminates if the progress of agent is small
            if progress < self.termination_limit_progress:
                if self.time_step >  850 :
-                    print(self.time_step)
                     print("--- No progress restart : reward: {},x:{},angle:{},trackPos:{}".format(progress,sp,obs['angle'],obs['trackPos']))
+                    print(self.time_step)
                     episode_terminate = True
                     client.R.d['meta'] = True
 
         if np.cos(obs['angle']) < 0:  # Episode is terminated if the agent runs backward
-            print("--- backward restart : reward: {},x:{},angle:{},trackPos:{}".format( progress, sp, obs['angle'], obs['trackPos']))
-            episode_terminate = True
-            client.R.d['meta'] = True
+            if self.time_step >  120 :
+                print("--- backward restart : reward: {},x:{},angle:{},trackPos:{}".format( progress, sp, obs['angle'], obs['trackPos']))
+                print   self.time_step
+                episode_terminate = True
+                client.R.d['meta'] = True
+
 
 
         if client.R.d['meta'] is True: # Send a reset signal
