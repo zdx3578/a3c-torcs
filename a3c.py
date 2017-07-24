@@ -38,7 +38,7 @@ class Worker(object):
         self.modeldir = modeldir
         self.logdir = logdir
 
-        self.name = 'worker_'+str(self.number)
+        self.name = 'I__'+str(self.number)+'__worker'
         self.docker_port = docker_port
 
         self.increment = self.global_episodes.assign_add(1)
@@ -119,7 +119,7 @@ class Worker(object):
 
                 # reset docker every third episode to avoid the mmemory leak
                 local_episodes = 0
-                if np.mod(local_episodes, 5) == 0:
+                if np.mod(local_episodes, 9) == 0:
                     observation = env.reset(relaunch=True)
                 else:
                     observation = env.reset()
@@ -163,7 +163,7 @@ class Worker(object):
 
                     if (total_steps % 30) == 0:
                         print(
-                            "Worker", self.name,
+                             self.name,
                             "Episode", episode_count, "Step",
                             episode_step_count, "Total_Steps",
                             total_steps, "Action", action_t[0][0],
