@@ -16,12 +16,12 @@ import requests
 
 class TorcsEnv:
     terminal_judge_start = 100  # If after 100 timestep still no progress, terminated
-    termination_limit_progress = -30.1  # [km/h], episode terminates if car is running slower than this limit
+    termination_limit_progress = -0.1  # [km/h], episode terminates if car is running slower than this limit
     default_speed = 50
 
     initial_reset = True
 
-    def __init__(self, vision=False, throttle=False, gear_change=False , port=3101):
+    def __init__(self, vision=False, throttle=False, gear_change=False , port=3201):
         self.vision = vision
         self.throttle = throttle
         self.gear_change = gear_change
@@ -181,7 +181,7 @@ class TorcsEnv:
         damage = np.array(obs['damage'])
         rpm = np.array(obs['rpm'])
 
-        progress = sp*np.cos(obs['angle']) - 0.3 * np.abs(sp*np.sin(obs['angle'])) - 0.1 * sp * np.abs(obs['trackPos'])
+        progress = sp*np.cos(obs['angle']) - np.abs(sp*np.sin(obs['angle'])) - sp*np.abs(obs['trackPos'])
         reward = progress
 
         # collision detection
@@ -197,9 +197,11 @@ class TorcsEnv:
 
         if self.terminal_judge_start < self.time_step: # Episode terminates if the progress of agent is small
            if progress < self.termination_limit_progress:
-               print("--- No progress restart : reward: {},x:{},angle:{},trackPos:{}".format(progress,sp,obs['angle'],obs['trackPos']))
-               episode_terminate = True
-               client.R.d['meta'] = True
+               if self.time_step >  450 :
+                    print(self.time_step)
+                    print("--- No progress restart : reward: {},x:{},angle:{},trackPos:{}".format(progress,sp,obs['angle'],obs['trackPos']))
+                    episode_terminate = True
+                    client.R.d['meta'] = True
 
         if np.cos(obs['angle']) < 0:  # Episode is terminated if the agent runs backward
             print("--- backward restart : reward: {},x:{},angle:{},trackPos:{}".format( progress, sp, obs['angle'], obs['trackPos']))

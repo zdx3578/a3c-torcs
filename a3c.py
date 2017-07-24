@@ -119,7 +119,7 @@ class Worker(object):
 
                 # reset docker every third episode to avoid the mmemory leak
                 local_episodes = 0
-                if np.mod(local_episodes, 3) == 0:
+                if np.mod(local_episodes, 5) == 0:
                     observation = env.reset(relaunch=True)
                 else:
                     observation = env.reset()
@@ -263,7 +263,7 @@ class A3C(object):
     """A3C algorithm for use with gym_torcs_docker"""
 
     def __init__(
-            self, docker_client, docker_start_port=3101,
+            self, docker_client, docker_start_port=3201,
             modeldir='../models/a3c', logdir='../logs/a3c'):
 
         self.docker_client = docker_client

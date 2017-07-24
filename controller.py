@@ -91,9 +91,9 @@ def start_game(port,pid):
     pid=subprocess.Popen(['/usr/local/bin/torcs',  ' -nofuel -nolaptime -p {} &'.format(port) ])
     print("***************************"*10)
     print("start torcs {} port {} ".format(pid ,port))
-    time.sleep(1)
+    time.sleep(2)
     os.system('sh autostart.sh')
-    time.sleep(1)
+    time.sleep(3)
     return pid
 
 
