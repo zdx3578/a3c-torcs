@@ -5,6 +5,9 @@
 anaconda python3.6
 tensorflow 1.2
 
+#run:
+1 python main.py
+2 python train_a3c.py
 
 
 # References
