@@ -93,7 +93,9 @@ def start_game(port,pid):
     print("start torcs {} port {} ".format(pid ,port))
     time.sleep(2)
     os.system('sh autostart.sh')
-    time.sleep(3)
+    print("***************************sleep start")
+    time.sleep(4)
+    print("***************************sleep end")
     return pid
 
 

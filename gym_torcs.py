@@ -197,7 +197,7 @@ class TorcsEnv:
 
         if self.terminal_judge_start < self.time_step: # Episode terminates if the progress of agent is small
            if progress < self.termination_limit_progress:
-               if self.time_step >  450 :
+               if self.time_step >  850 :
                     print(self.time_step)
                     print("--- No progress restart : reward: {},x:{},angle:{},trackPos:{}".format(progress,sp,obs['angle'],obs['trackPos']))
                     episode_terminate = True
