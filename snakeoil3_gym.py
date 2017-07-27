@@ -58,8 +58,6 @@ import sys
 import getopt
 import os
 import time
-import requests
-import subprocess
 PI= 3.14159265359
 
 data_size = 2**17
@@ -79,15 +77,6 @@ ophelp+= ' --version, -v        Show current version.'
 usage= 'Usage: %s [ophelp [optargs]] \n' % sys.argv[0]
 usage= usage + ophelp
 version= "20130505-2"
-
-
-def send_cmd(worker,port):
-
-    start_cmd={"worker":"worker"+str(worker),"port":port}
-    requests.post("http://127.0.0.1:5000/cmd_api", data=start_cmd)
-
-
-
 
 def clip(v,lo,hi):
     if v<lo: return lo
@@ -127,10 +116,9 @@ def bargraph(x,mn,mx,w,c='X'):
     return '[%s]' % (nnc+npc+ppc+pnc)
 
 class Client():
-    def __init__(self,H=None,p=None,i=None,e=None,t=None,s=None,d=None,vision=False):
+    def __init__(self,relaunch_torcs,H=None,p=None,i=None,e=None,t=None,s=None,d=None,vision=False):
         # If you don't like the option defaults,  change them here.
         self.vision = vision
-        self.pid=None
 
         self.host= 'localhost'
         self.port= 3001
@@ -140,7 +128,7 @@ class Client():
         self.stage= 3 # 0=Warm-up, 1=Qualifying 2=Race, 3=unknown <Default=3>
         self.debug= False
         self.maxSteps= 100000  # 50steps/second
-        self.parse_the_command_line()
+        self.relaunch_torcs = relaunch_torcs
         if H: self.host= H
         if p: self.port= p
         if i: self.sid= i
@@ -151,38 +139,6 @@ class Client():
         self.S= ServerState()
         self.R= DriverAction()
         self.setup_connection()
-        print("==**=="*10)
-        print("set up game server on port :{}".format(self.port))
-    def start_torcs(self):
-        self.kill_torcs()
-        time.sleep(1.5)
-        while os.system("ps -a|grep autostart") == 0 :
-            sleep(5)
-        
-        if self.vision is True:
-                # os.system('torcs  -nofuel -nodamage -nolaptime -vision -p {} &'.format(self.port))
-            proc=subprocess.Popen([ '/usr/local/bin/torcs'   , ' -nofuel -nodamage -nolaptime -vision -p {} &'.format(self.port)],shell=False)
-            self.pid=proc.pid
-
-        else:
-            # os.system('torcs  -nofuel -nolaptime -p {} &'.format(self.port))
-            proc=subprocess.Popen([ '/usr/local/bin/torcs',' -nofuel -nolaptime -p {} &'.format(self.port)],shell=False)
-            self.pid=proc.pid
-        time.sleep(0.5)
-        
-        print("start torcs {}".format(self.pid))
-        time.sleep(0.5)
-        while os.system("ps -a|grep autostart") == 0 :
-            sleep(5)
-        print('load game')
-        
-        os.system('sh autostart.sh')
-        time.sleep(0.5)
-    
-    def kill_torcs(self):
-        if self.pid :
-            os.system("kill -9 {}".format(self.pid))
-            print("kill torcs {}".format(self.pid))
 
     def setup_connection(self):
         # == Set Up UDP Socket ==
@@ -205,7 +161,6 @@ class Client():
 
             try:
                 self.so.sendto(initmsg.encode(), (self.host, self.port))
-                print("connected to remote port : {}".format(self.port))
             except socket.error as emsg:
                 sys.exit(-1)
             sockdata= str()
@@ -214,20 +169,9 @@ class Client():
                 sockdata = sockdata.decode('utf-8')
             except socket.error as emsg:
                 print("Waiting for server on %d............" % self.port)
-                print("Count Down : {}, fail : {} ".format(self.port,n_fail) )
+                print("Count Down : " + str(n_fail))
                 if n_fail < 0:
-                    print("relaunch torcs")
-                    # self.start_torcs()
-                    send_cmd(self.port,self.port)
-                    # os.system('pkill torcs')
-                    # time.sleep(1.0)
-                    # if self.vision is False:
-                    #     os.system('torcs -nofuel -nodamage -nolaptime &')
-                    # else:
-                    #     os.system('torcs -nofuel -nodamage -nolaptime -vision &')
-
-                    # time.sleep(1.0)
-                    # os.system('sh autostart.sh')
+                    self.relaunch_torcs()
                     n_fail = 5
                 n_fail -= 1
 
@@ -613,7 +557,7 @@ def drive_example(c):
 
 # ================ MAIN ================
 if __name__ == "__main__":
-    C= Client(p=3201)
+    C= Client(p=3101)
     for step in range(C.maxSteps,0,-1):
         C.get_servers_input()
         drive_example(C)

@@ -262,26 +262,27 @@ class A3CNetwork(Network):
 
     def _create_network(self):
         with tf.variable_scope(self.scope):
+            initializer= tf.truncated_normal_initializer( mean=0.0, stddev=0.01)
             # Input and visual encoding layers
             self.inputs = tf.placeholder(
                 shape=[None, self.state_size], dtype=tf.float32)
 
             s_layer1 = tf.layers.batch_normalization(
                 tf.layers.dense(
-                    inputs=self.inputs, activation=tf.nn.relu,
+                    inputs=self.inputs, activation=tf.nn.relu,kernel_initializer=initializer,
                     units=A3CNetwork.HIDDEN1_UNITS),
                 training=self.is_training, name='s_layer_1')
 
             s_layer2 = tf.layers.batch_normalization(
                 tf.layers.dense(
-                    inputs=s_layer1, activation=tf.nn.relu,
+                    inputs=s_layer1, activation=tf.nn.relu,kernel_initializer=initializer,
                     units=A3CNetwork.HIDDEN2_UNITS),
                 training=self.is_training, name='s_layer_2')
 
             # Output layers for policy and value estimations
             self.policy_mu = tf.layers.batch_normalization(
                 tf.layers.dense(
-                    inputs=s_layer2, units=2, activation=tf.nn.tanh),
+                    inputs=s_layer2, units=2, activation=tf.nn.tanh,kernel_initializer=initializer,),
                 training=self.is_training, name='policy_mu')
 
             # clip the standard deviation to avoid numerical instabilites in
@@ -289,13 +290,13 @@ class A3CNetwork(Network):
             self.policy_sd = tf.clip_by_value(
                 tf.layers.batch_normalization(
                     tf.layers.dense(
-                        inputs=s_layer2, units=2, activation=tf.nn.softplus),
+                        inputs=s_layer2, units=2, activation=tf.nn.softplus,kernel_initializer=initializer,),
                     training=self.is_training),
                 [0.05]*self.action_size, [0.25]*self.action_size,
                 name='policy_sd')
 
             self.value = tf.layers.batch_normalization(
-                tf.layers.dense(inputs=s_layer2, units=1),
+                tf.layers.dense(inputs=s_layer2, units=1,kernel_initializer=initializer,),
                 training=self.is_training, name='value')
 
             self.normal_dist = tf.contrib.distributions.Normal(

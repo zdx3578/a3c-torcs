@@ -3,51 +3,51 @@ from gym import spaces
 import numpy as np
 # from os import path
 import snakeoil3_gym as snakeoil3
-from  snakeoil3_gym import  send_cmd
 import numpy as np
 import copy
 import collections as col
 import os
 import subprocess
 import time
-import requests
-
+import signal
 
 
 class TorcsEnv:
-    terminal_judge_start = 100  # If after 100 timestep still no progress, terminated
-    termination_limit_progress = 8  # [km/h], episode terminates if car is running slower than this limit
+    terminal_judge_start = 500  # Speed limit is applied after this step
+    termination_limit_progress = 5  # [km/h], episode terminates if car is running slower than this limit
     default_speed = 50
 
     initial_reset = True
 
-    def __init__(self, vision=False, throttle=False, gear_change=False , port=3201):
+    def start_torcs_process(self):
+        if self.torcs_proc is not None:
+            os.killpg(os.getpgid(self.torcs_proc.pid), signal.SIGKILL)
+            time.sleep(0.5)
+            self.torcs_proc = None
+        window_title = str(self.port)
+ 
+        command =['/usr/local/bin/torcs',' -nofuel -nodamage -nolaptime -title {} -p {}'.format(window_title, self.port) ] 
+        if self.vision is True:
+            command += ' -vision'
+        self.torcs_proc = subprocess.Popen(command, shell=False, preexec_fn=os.setsid)
+        time.sleep(0.5)
+        os.system('sh autostart.sh {}'.format(window_title))
+        time.sleep(0.5)
+
+    def __init__(self, vision=False, throttle=False, gear_change=False, port=3101):
+       #print("Init")
         self.vision = vision
         self.throttle = throttle
         self.gear_change = gear_change
-        self.port = port 
+        self.port = port
+        self.torcs_proc = None
+
         self.initial_run = True
-        self.pid=None
-        
 
         ##print("launch torcs")
-        #os.system('pkill torcs')
         time.sleep(0.5)
-
-        send_cmd(self.port,self.port)
-        # self.kill_torcs()
-        # if self.vision is True:
-        #     os.system('torcs  -nofuel -nodamage -nolaptime -vision -p {} &'.format(self.port))
-
-
-        # else:
-        #     os.system('torcs  -nofuel -nolaptime -p {} &'.format(self.port))
-        # self.start_torcs()
-
-
-        # time.sleep(0.5)
-        # os.system('sh autostart.sh')
-        # time.sleep(0.5)
+        self.start_torcs_process()
+        time.sleep(0.5)
 
         """
         # Modify here if you use multiple tracks in the environment
@@ -72,44 +72,11 @@ class TorcsEnv:
             high = np.array([1., np.inf, np.inf, np.inf, 1., np.inf, 1., np.inf, 255])
             low = np.array([0., -np.inf, -np.inf, -np.inf, 0., -np.inf, 0., -np.inf, 0])
             self.observation_space = spaces.Box(low=low, high=high)
-    def start_torcs(self):
-        self.kill_torcs()
-        time.sleep(1.5)
-        while os.system("ps -a|grep autostart") == 0 :
-            sleep(5)
-        
-        if self.vision is True:
-                # os.system('torcs  -nofuel -nodamage -nolaptime -vision -p {} &'.format(self.port))
-            proc=subprocess.Popen([ '/usr/local/bin/torcs'   , ' -nofuel -nodamage -nolaptime -vision -p {} &'.format(self.port)],shell=False)
-            self.pid=proc.pid
-
-        else:
-            # os.system('torcs  -nofuel -nolaptime -p {} &'.format(self.port))
-            proc=subprocess.Popen([ '/usr/local/bin/torcs',' -nofuel -nolaptime -p {} &'.format(self.port)],shell=False)
-            self.pid=proc.pid
-        time.sleep(0.5)
-        
-        print("start torcs {}".format(self.pid))
-        time.sleep(0.5)
-        while os.system("ps -a|grep autostart") == 0 :
-            sleep(5)
-        print('load game')
-        
-        os.system('sh autostart.sh')
-        time.sleep(0.5)
-        
-        
-
-    def kill_torcs(self):
-        if self.pid :
-            os.system("kill -9 {}".format(self.pid))
-            print("kill torcs {}".format(self.pid))
 
     def step(self, u):
        #print("Step")
         # convert thisAction to the actual torcs actionstr
         client = self.client
-        # print("uuuuuu",u)
 
         this_action = self.agent_to_torcs(u)
 
@@ -139,7 +106,7 @@ class TorcsEnv:
                 action_torcs['accel'] -= .2
         else:
             action_torcs['accel'] = this_action['accel']
-            action_torcs['brake'] = this_action['brake']
+            #action_torcs['brake'] = this_action['brake']
 
         #  Automatic Gear Change by Snakeoil
         if self.gear_change is True:
@@ -176,12 +143,13 @@ class TorcsEnv:
         # Reward setting Here #######################################
         # direction-dependent positive reward
         track = np.array(obs['track'])
+
         trackPos = np.array(obs['trackPos'])
         sp = np.array(obs['speedX'])
         damage = np.array(obs['damage'])
         rpm = np.array(obs['rpm'])
 
-        progress = sp*np.cos(obs['angle']) - np.abs(sp*np.sin(obs['angle'])) - sp*np.abs(obs['trackPos'])
+        progress = sp*np.cos(obs['angle']) - np.abs(sp*np.sin(obs['angle'])) - sp * np.abs(obs['trackPos'])
         reward = progress
 
         # collision detection
@@ -194,6 +162,12 @@ class TorcsEnv:
         #    reward = -200
         #    episode_terminate = True
         #    client.R.d['meta'] = True
+
+        #if self.terminal_judge_start < self.time_step: # Episode terminates if the progress of agent is small
+        #    if progress < self.termination_limit_progress:
+        #        print("No progress")
+        #        episode_terminate = True
+        #        client.R.d['meta'] = True
 
         if self.terminal_judge_start < self.time_step: # Episode terminates if the progress of agent is small
            if progress < self.termination_limit_progress:
@@ -212,6 +186,11 @@ class TorcsEnv:
 
 
 
+        # if np.cos(obs['angle']) < 0: # Episode is terminated if the agent runs backward
+        #     episode_terminate = True
+        #     client.R.d['meta'] = True
+
+
         if client.R.d['meta'] is True: # Send a reset signal
             self.initial_run = False
             client.respond_to_server()
@@ -221,7 +200,7 @@ class TorcsEnv:
         return self.get_obs(), reward, client.R.d['meta'], {}
 
     def reset(self, relaunch=False):
-        #print("Reset")
+        print("Reset")
 
         self.time_step = 0
 
@@ -235,7 +214,7 @@ class TorcsEnv:
                 print("### TORCS is RELAUNCHED ###")
 
         # Modify here if you use multiple tracks in the environment
-        self.client = snakeoil3.Client(p=self.port, vision=self.vision)  # Open new UDP in vtorcs
+        self.client = snakeoil3.Client(self.start_torcs_process, p=self.port)  # Open new UDP in vtorcs
         self.client.MAX_STEPS = np.inf
 
         client = self.client
@@ -250,24 +229,18 @@ class TorcsEnv:
         return self.get_obs()
 
     def end(self):
-        # os.system('pkill torcs')
-        self.kill_torcs()
+        os.killpg(os.getpgid(self.torcs_proc.pid), signal.SIGKILL)
+        time.sleep(0.5)
+        os.killpg(os.getpgid(self.torcs_proc.pid), signal.SIGKILL)
 
     def get_obs(self):
         return self.observation
 
     def reset_torcs(self):
        #print("relaunch torcs")
-        #os.system('pkill torcs')
-        # time.sleep(0.5)
-        # if self.vision is True:
-        #     os.system('torcs -nofuel -nodamage -nolaptime -vision -p {} &'.format(self.port))
-        # else:
-        #     os.system('torcs -nofuel -nolaptime -p {} &'.format(self.port))
-        # time.sleep(0.5)
-        # self.start_torcs()
-        send_cmd(self.port,self.port)
-        
+        self.torcs_proc.terminate()
+        time.sleep(0.5)
+        self.start_torcs_process()
         time.sleep(0.5)
 
     # def agent_to_torcs(self, u):
@@ -275,7 +248,7 @@ class TorcsEnv:
 
     #     if self.throttle is True:  # throttle action is enabled
     #         torcs_action.update({'accel': u[1]})
-    #         torcs_action.update({'brake': u[2]})
+    #         #torcs_action.update({'brake': u[2]})
 
     #     if self.gear_change is True: # gear change action is enabled
     #         torcs_action.update({'gear': int(u[3])})
