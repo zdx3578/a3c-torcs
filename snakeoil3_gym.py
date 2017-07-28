@@ -150,7 +150,7 @@ class Client():
         # == Initialize Connection To Server ==
         self.so.settimeout(1)
 
-        n_fail = 5
+        n_fail = 3
         while True:
             # This string establishes track sensor angles! You can customize them.
             #a= "-90 -75 -60 -45 -30 -20 -15 -10 -5 0 5 10 15 20 30 45 60 75 90"
@@ -171,8 +171,9 @@ class Client():
                 print("Waiting for server on %d............" % self.port)
                 print("Count Down : " + str(n_fail))
                 if n_fail < 0:
+                    time.sleep(np.random.ranf([1])*3)
                     self.relaunch_torcs()
-                    n_fail = 5
+                    n_fail = 3
                 n_fail -= 1
 
             identify = '***identified***'

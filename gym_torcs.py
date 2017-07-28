@@ -29,6 +29,7 @@ class TorcsEnv:
         command =['/usr/local/bin/torcs',' -nofuel -nodamage -nolaptime -title {} -p {}'.format(window_title, self.port) ] 
         if self.vision is True:
             command += ' -vision'
+        time.sleep(np.random.ranf([1])*3)
         self.torcs_proc = subprocess.Popen(command, shell=False, preexec_fn=os.setsid)
         time.sleep(0.5)
         os.system('sh autostart.sh {}'.format(window_title))

@@ -329,7 +329,7 @@ class A3C(object):
                         lambda: worker.work(
                             self.max_episode_length, self.gamma, sess, coord,
                             saver)))
-                sleep(np.random.random_integers(15))
+                sleep(np.random.random_integers(5))
                 t.start()
                 sleep(0.5)
                 #start_pid=os.system("ps -a|grep autostart")
